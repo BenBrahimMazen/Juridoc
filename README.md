@@ -20,7 +20,7 @@ disclaimer.
 4. [Strengths](#4-strengths)
 5. [Limitations](#5-limitations)
 6. [Prerequisites](#6-prerequisites)
-7. [Step-by-step setup (for the encadrant)](#7-step-by-step-setup-for-the-encadrant)
+7. [Step-by-step setup](#7-step-by-step-setup)
 8. [The corpus & the index (important)](#8-the-corpus--the-index-important)
 9. [Running the service](#9-running-the-service)
 10. [Testing questions](#10-testing-questions)
@@ -185,7 +185,7 @@ printed.
 
 ---
 
-## 7. Step-by-step setup (for the encadrant)
+## 7. Step-by-step setup
 
 > The **pre-built vector index (`data/chroma/`) ships with the repository** via
 > Git LFS, so cloning gives you a ready-to-query index — **no ingestion needed**.
