@@ -1,0 +1,5 @@
+# Ship the pre-built ChromaDB index with the repo so the encadrant clones-and-runs
+# without re-ingesting. The index contains a >100 MB sqlite file, which exceeds
+# GitHub's per-file limit — Git LFS stores it. Anyone cloning must have Git LFS
+# installed (git lfs install) to fetch the index.
+data/chroma/** filter=lfs diff=lfs merge=lfs -text

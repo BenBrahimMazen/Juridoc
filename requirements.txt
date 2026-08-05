@@ -1,0 +1,18 @@
+# --- Tunisian Legal RAG – Python dependencies (CPU-only, offline at runtime) ---
+# Install:  python -m pip install -r requirements.txt
+# Note: sentence-transformers pulls in torch. On Windows pip fetches a CPU wheel
+# by default, which is what we want (no GPU assumed). If you get a CUDA build and
+# want to save disk, see README -> "Lightweight CPU torch".
+
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.6
+# Pinned: the pre-built index in data/chroma/ uses this exact on-disk format.
+chromadb==1.5.9
+PyMuPDF>=1.24
+sentence-transformers>=2.6
+httpx>=0.27
+tqdm>=4.66
+# OCR fallback for scanned/image-only PDFs (optional but recommended — the corpus
+# has 2 scanned docs). Uses onnxruntime (no Tesseract/torchvision needed).
+rapidocr-onnxruntime>=1.3

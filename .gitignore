@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Source PDFs and OCR caches are kept out of git. The pre-built vector index
+# (data/chroma/) IS committed via Git LFS (.gitattributes), so cloning the repo
+# gives a ready-to-query index without re-running ingestion.
+pdfs/
+data/processed/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
