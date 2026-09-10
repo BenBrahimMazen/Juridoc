@@ -71,22 +71,15 @@ python run_api.py        # → http://127.0.0.1:8000/docs
 
 ```mermaid
 flowchart TD
-    subgraph INGEST["Ingestion - one-time, CPU 1-2 h"]
-        A["59 legal PDFs<br/>17 domains, French"] --> B["PyMuPDF parse<br/>+ OCR fallback + force-OCR"]
-        B --> C["Per-article chunking<br/>French legal numbering"]
-        C --> M["Metadata: code_name,<br/>primary + secondary domain,<br/>article no., law ref"]
-        M --> E2["multilingual-e5-base<br/>embeddings"]
-    end
-
-    E2 --> V["ChromaDB - one collection<br/>17,181 chunks, HNSW, cosine<br/>committed via Git LFS"]
-
-    subgraph QUERY["Query - every request"]
-        Q["Question<br/>formal or colloquial"] --> R["Router<br/>keyword + embedding similarity<br/>ranked domain distribution<br/>+ confidence"]
-        R --> RT["Retriever<br/>corpus-wide over-fetch 3x top_k<br/>de-dupe by article<br/>hybrid re-rank 0.6 embed + 0.4 keyword<br/>+ soft domain boost<br/>+ colloquial to legal expansion"]
-        V --> RT
-        RT --> G["llama3.1 via Ollama<br/>strict lawyer persona<br/>answer only from context<br/>citations Source N, streamed"]
-        G --> S["FastAPI<br/>POST /query - JSON<br/>POST /query/stream - SSE"]
-    end
+    A[59 legal PDFs across 17 domains] --> B[PyMuPDF parse with OCR fallback]
+    B --> C[per-article chunking with legal metadata]
+    C --> D[multilingual-e5 embeddings]
+    D --> E[ChromaDB index with 17k chunks via Git LFS]
+    F[question in French] --> G[router ranks domains with confidence]
+    G --> H[hybrid retriever with soft domain boost]
+    E --> H
+    H --> I[llama3.1 on Ollama with lawyer persona]
+    I --> J[FastAPI JSON or SSE streaming answer]
 ```
 
 **Key design choices**
