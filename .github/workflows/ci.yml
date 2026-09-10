@@ -30,7 +30,8 @@ jobs:
 
   # Heavy: needs the ~100 MB LFS index + the e5 embedding model (~1.1 GB).
   # Manual + weekly only, not per-push. Enforces thresholds just below the
-  # published scores (93.7 / 98.4 / 100) so regressions fail loudly.
+  # published scores (93.7 / 98.4 / 100 / 88.2 article-level) so regressions
+  # fail loudly.
   eval:
     name: routing + retrieval eval
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -64,8 +65,11 @@ jobs:
               "top2": sum(r["domain_ok_top2"] for r in rows) / n,
               "retrieval": sum(r["retrieval_ok"] for r in rows) / n,
           }
+          art_rows = [r for r in rows if r.get("article_ok") is not None]
+          if art_rows:
+              m["article"] = sum(r["article_ok"] for r in art_rows) / len(art_rows)
           print(f"n={n}  " + "  ".join(f"{k}={v:.3f}" for k, v in m.items()))
-          limits = {"top1": 0.90, "top2": 0.95, "retrieval": 0.99}
+          limits = {"top1": 0.90, "top2": 0.95, "retrieval": 0.99, "article": 0.78}
           failed = {k: (v, limits[k]) for k, v in m.items() if v < limits[k]}
           if failed:
               for k, (v, lim) in failed.items():

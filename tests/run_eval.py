@@ -9,6 +9,13 @@ ROUTING correctness against the new 17-domain taxonomy, reported as:
 - retrieval accuracy (top-N chunks include an accepted code_name),
 broken out PER DOMAIN and by query STYLE (formal vs scenario).
 
+Cases may also carry an "accept_articles" list (article-number strings): when
+present, the case joins the ARTICLE-LEVEL subset — did some top-5 chunk come
+from an accepted code AND carry an accepted article_number? Article numbers are
+legal ground truth, so the annotations are kept deliberately small and each one
+is human-validated; the subset is reported separately, never mixed into the
+code-level aggregate.
+
 Optionally also runs end-to-end generation and checks answer structure +
 disclaimer when Ollama is up.
 
@@ -51,6 +58,10 @@ class CaseResult:
     retrieval_ok: bool = False
     top_codes: list[str] = field(default_factory=list)
     matched_code: str = ""
+    accept_articles: list[str] = field(default_factory=list)
+    article_ok: bool | None = None
+    matched_article: str = ""
+    top_articles: list[str] = field(default_factory=list)
     gen_ok: bool | None = None
     has_disclaimer: bool | None = None
     structure_score: int | None = None
@@ -63,6 +74,21 @@ def _retrieval_correct(results: list[dict], accept_codes: list[str]) -> tuple[bo
         for sub in accept_codes:
             if sub.lower() in cn.lower():
                 return True, cn
+    return False, ""
+
+
+def _article_correct(
+    results: list[dict], accept_codes: list[str], accept_articles: list[str]
+) -> tuple[bool, str]:
+    """Article-level check: an accepted code that also carries an accepted article_number."""
+    arts = {str(a).strip() for a in accept_articles if str(a).strip()}
+    for r in results:
+        m = r.get("metadata", {}) or {}
+        if m.get("article_number", "") not in arts:
+            continue
+        cn = m.get("code_name", "")
+        if any(sub.lower() in cn.lower() for sub in accept_codes):
+            return True, str(m["article_number"])
     return False, ""
 
 
@@ -88,6 +114,11 @@ def evaluate(topn: int = 5, generate: bool = False) -> list[CaseResult]:
 
         ret_ok, matched = _retrieval_correct(top, case.get("accept_codes", []))
         top2 = [d for d, _ in decision.top_domains[:2]]
+        top_arts = [str(c["metadata"].get("article_number", "") or "?") for c in top]
+        arts = [str(a) for a in case.get("accept_articles", [])]
+        art_ok, art_matched = (None, "")
+        if arts:
+            art_ok, art_matched = _article_correct(top, case.get("accept_codes", []), arts)
         cr = CaseResult(
             id=case["id"], question=q, style=style, expected_domain=exp,
             routed_primary=decision.primary_domain,
@@ -95,6 +126,8 @@ def evaluate(topn: int = 5, generate: bool = False) -> list[CaseResult]:
             domain_ok_top1=(decision.primary_domain == exp),
             domain_ok_top2=(exp in top2),
             retrieval_ok=ret_ok, top_codes=top_codes, matched_code=matched,
+            accept_articles=arts, article_ok=art_ok, matched_article=art_matched,
+            top_articles=top_arts,
         )
 
         if generate and llm_on:
@@ -117,18 +150,21 @@ def _pct(x: int, n: int) -> float:
 
 def _print(results: list[CaseResult], generate: bool) -> None:
     n = len(results)
-    print(f"{'ID':<8}{'sty':<4}{'expected':<24}{'routed(top1)':<24}{'T1':<3}{'T2':<3}{'RET':<4}"
+    print(f"{'ID':<8}{'sty':<4}{'expected':<24}{'routed(top1)':<24}{'T1':<3}{'T2':<3}{'RET':<4}{'ART':<4}"
           + ("GEN  " if generate else "") + "question")
     print("-" * 116)
     for r in results:
         t1 = "OK" if r.domain_ok_top1 else "."
         t2 = "OK" if r.domain_ok_top2 else "."
         ret = "OK" if r.retrieval_ok else "xx"
+        art = ("OK" if r.article_ok else "xx") if r.article_ok is not None else "-"
         extra = f"{'OK' if r.gen_ok else 'xx':<5}" if generate and r.gen_ok is not None else ""
         print(f"{r.id:<8}{r.style[:3]:<4}{r.expected_domain[:22]:<22}{r.routed_primary[:22]:<22}"
-              f"{t1:<3}{t2:<3}{ret:<4}{extra}{r.question[:48]}")
+              f"{t1:<3}{t2:<3}{ret:<4}{art:<4}{extra}{r.question[:48]}")
         if not r.retrieval_ok and r.top_codes:
             print(f"              got: {r.top_codes[:3]}")
+        if r.article_ok is False and r.accept_articles:
+            print(f"              want art {r.accept_articles} in top-5; got {r.top_articles}")
     print("-" * 116)
 
     r_top1 = sum(r.domain_ok_top1 for r in results)
@@ -138,6 +174,11 @@ def _print(results: list[CaseResult], generate: bool) -> None:
     print(f"  Routing top-1 : {_pct(r_top1, n):5.1f}%  ({r_top1}/{n})")
     print(f"  Routing top-2 : {_pct(r_top2, n):5.1f}%  ({r_top2}/{n})")
     print(f"  Retrieval     : {_pct(r_ret, n):5.1f}%  ({r_ret}/{n}, top-{results and len(results[0].top_codes) or 5})")
+    art_rows = [r for r in results if r.article_ok is not None]
+    if art_rows:
+        a_ok = sum(r.article_ok for r in art_rows)
+        print(f"  ARTICLE-LEVEL subset: {_pct(a_ok, len(art_rows)):5.1f}%  "
+              f"({a_ok}/{len(art_rows)} annotated cases, top-{len(results[0].top_codes)})")
 
     # per-domain
     by_dom: dict[str, list[CaseResult]] = defaultdict(list)
