@@ -71,21 +71,21 @@ python run_api.py        # → http://127.0.0.1:8000/docs
 
 ```mermaid
 flowchart TD
-    subgraph INGEST["Ingestion (one-time, CPU ~1-2 h)"]
-        A["59 legal PDFs<br/>(17 domains, FR)"] --> B["PyMuPDF parse<br/>+ OCR fallback (rapidocr)<br/>+ force-OCR mode"]
-        B --> C["Per-article chunking<br/>(French legal numbering)"]
+    subgraph INGEST["Ingestion - one-time, CPU 1-2 h"]
+        A["59 legal PDFs<br/>17 domains, French"] --> B["PyMuPDF parse<br/>+ OCR fallback + force-OCR"]
+        B --> C["Per-article chunking<br/>French legal numbering"]
         C --> M["Metadata: code_name,<br/>primary + secondary domain,<br/>article no., law ref"]
         M --> E2["multilingual-e5-base<br/>embeddings"]
     end
 
-    E2 --> V[("ChromaDB — one collection<br/>17,181 chunks · HNSW · cosine<br/>committed via Git LFS")]
+    E2 --> V["ChromaDB - one collection<br/>17,181 chunks, HNSW, cosine<br/>committed via Git LFS"]
 
-    subgraph QUERY["Query (every request)"]
-        Q["Question (formal or colloquial)"] --> R["Router<br/>keyword + embedding similarity<br/>→ ranked domain distribution<br/>+ confidence"]
-        R --> RT["Retriever<br/>corpus-wide over-fetch (3×top_k)<br/>→ de-dupe by article<br/>→ hybrid re-rank (α·embed + (1-α)·keywords)<br/>+ soft domain boost (top-1 / top-2)<br/>+ colloquial→legal expansion"]
+    subgraph QUERY["Query - every request"]
+        Q["Question<br/>formal or colloquial"] --> R["Router<br/>keyword + embedding similarity<br/>ranked domain distribution<br/>+ confidence"]
+        R --> RT["Retriever<br/>corpus-wide over-fetch 3x top_k<br/>de-dupe by article<br/>hybrid re-rank 0.6 embed + 0.4 keyword<br/>+ soft domain boost<br/>+ colloquial to legal expansion"]
         V --> RT
-        RT --> G["llama3.1 via Ollama<br/>strict lawyer persona · answer-only-from-context<br/>citations [Source N] · streamed"]
-        G --> S["FastAPI<br/>POST /query (JSON)<br/>POST /query/stream (SSE)"]
+        RT --> G["llama3.1 via Ollama<br/>strict lawyer persona<br/>answer only from context<br/>citations Source N, streamed"]
+        G --> S["FastAPI<br/>POST /query - JSON<br/>POST /query/stream - SSE"]
     end
 ```
 
