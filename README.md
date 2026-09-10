@@ -1,5 +1,6 @@
 # Juridoc — Offline Tunisian Legal RAG
 
+![CI](https://github.com/BenBrahimMazen/Juridoc/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-REST%20%2B%20SSE-009688?logo=fastapi&logoColor=white)
 ![LLM](https://img.shields.io/badge/LLM-llama3.1%20%C2%B7%20Ollama-000000?logo=ollama&logoColor=white)

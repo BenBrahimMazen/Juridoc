@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 4 * * 1" # weekly (Mon 04:23 UTC), off the :00 mark
+
+jobs:
+  # Fast, dependency-free: chunker tests import nothing beyond the stdlib and
+  # tests/test_chunker.py exits non-zero on failure (script mode).
+  tests:
+    name: unit tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Byte-compile all sources (syntax check, no imports)
+        run: python -m compileall -q config.py src scripts tests
+      - name: Chunker unit tests
+        run: python tests/test_chunker.py
+
+  # Heavy: needs the ~100 MB LFS index + the e5 embedding model (~1.1 GB).
+  # Manual + weekly only, not per-push. Enforces thresholds just below the
+  # published scores (93.7 / 98.4 / 100) so regressions fail loudly.
+  eval:
+    name: routing + retrieval eval
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU-only torch first (avoids the CUDA wheel on Linux)
+        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Verify the LFS index arrived (not a pointer file)
+        run: |
+          size=$(stat -c%s data/chroma/chroma.sqlite3)
+          echo "chroma.sqlite3 = $size bytes"
+          test "$size" -gt 50000000
+      - name: Run eval and enforce thresholds
+        run: |
+          python tests/run_eval.py --json > eval_results.json
+          python - <<'PY'
+          import json, sys
+          rows = json.load(open("eval_results.json"))
+          n = len(rows)
+          m = {
+              "top1": sum(r["domain_ok_top1"] for r in rows) / n,
+              "top2": sum(r["domain_ok_top2"] for r in rows) / n,
+              "retrieval": sum(r["retrieval_ok"] for r in rows) / n,
+          }
+          print(f"n={n}  " + "  ".join(f"{k}={v:.3f}" for k, v in m.items()))
+          limits = {"top1": 0.90, "top2": 0.95, "retrieval": 0.99}
+          failed = {k: (v, limits[k]) for k, v in m.items() if v < limits[k]}
+          if failed:
+              for k, (v, lim) in failed.items():
+                  print(f"FAIL {k}={v:.3f} < threshold {lim}")
+              sys.exit(1)
+          print("all thresholds met")
+          PY
