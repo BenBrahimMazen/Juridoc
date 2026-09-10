@@ -134,11 +134,11 @@ Measured on a **63-case suite** (`tests/run_eval.py`): 51 formal-phrasing cases 
   (escalade/effraction/arme → surface the aggravation articles) now surfaces
   **art. 260** correctly. Edge cases can still occur — always inspect citations.
 - **Article-level subset.** 17 cases carry `accept_articles` — the legally correct
-  article number(s), each validated by hand, must appear in the top-5 chunks. The
-  measured **88.2 % (15/17)** is honestly imperfect: both misses are the
-  cross-referencing weakness described above (`cv2` retrieves the COC 102–104
-  exculpation cluster but not the foundational art. 82; `fb4` retrieves IRPP *rate*
-  articles but not the art. 39 *détermination du bénéfice imposable*).
+  article number(s), each validated by hand against the source texts, must appear
+  in the top-5 chunks. The measured **88.2 % (15/17)** is honestly imperfect: both
+  misses are real (`cv2` retrieves the COC 102–104 exculpation cluster but not the
+  foundational art. 82; `gl6` retrieves procedural Code de la Route articles —
+  immobilisation, dépistage — but not the art. 87 drunk-driving sanction).
 - **The original 17 formal cases remain 17/17** on routing and retrieval — the move
   to the multi-domain taxonomy introduced no regression.
 
