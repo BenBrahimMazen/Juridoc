@@ -16,6 +16,8 @@
 **17 domains · 59 PDFs · 17,181 chunks · 63-case eval** — **93.7 %** top-1 routing ·
 **98.4 %** top-2 · **100 %** code-level retrieval.
 
+![Demo — `python scripts/ask.py`, real routing + retrieval + streaming, accéléré ×51](docs/demo.gif)
+
 **Fast path** — the pre-built vector index ships in the repo, so no ingestion is needed:
 
 ```bash
