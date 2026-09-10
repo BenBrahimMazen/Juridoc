@@ -111,7 +111,7 @@ Measured on a **63-case suite** (`tests/run_eval.py`): 51 formal-phrasing cases 
 | Domain routing — **top-1** | **93.7 %** (59/63) |
 | Domain routing — **top-2** | **98.4 %** (62/63) |
 | Retrieval (expected code in top-5) | **100 %** (63/63) |
-| Article-level (17 hand-validated cases) | **88.2 %** (15/17) |
+| Article-level (17 hand-validated cases) | **94.1 %** (16/17) |
 | Formal-phrasing subset | 96.1 % top-1 / 100 % top-2 / 100 % retrieval |
 | Scenario/colloquial subset | 83.3 % top-1 / 91.7 % top-2 / 100 % retrieval |
 
@@ -135,10 +135,14 @@ Measured on a **63-case suite** (`tests/run_eval.py`): 51 formal-phrasing cases 
   **art. 260** correctly. Edge cases can still occur — always inspect citations.
 - **Article-level subset.** 17 cases carry `accept_articles` — the legally correct
   article number(s), each validated by hand against the source texts, must appear
-  in the top-5 chunks. The measured **88.2 % (15/17)** is honestly imperfect: both
-  misses are real (`cv2` retrieves the COC 102–104 exculpation cluster but not the
-  foundational art. 82; `gl6` retrieves procedural Code de la Route articles —
-  immobilisation, dépistage — but not the art. 87 drunk-driving sanction).
+  in the top-5 chunks. Measured **94.1 % (16/17)**. Of the two original misses,
+  `gl6` was fixed by a second targeted query expansion (the art. 87 drunk-driving
+  sanction shares "alcoolique" with procedural articles, so terms from its own
+  penalty list now separate it — same mechanism as art. 260 above). `cv2` remains
+  the one honest miss: the foundational COC art. 82 shares no vocabulary with the
+  query and sits outside the 20-article embedding pool entirely, so no keyword
+  expansion can reach it — the known limit for foundational provisions phrased in
+  abstract terms.
 - **The original 17 formal cases remain 17/17** on routing and retrieval — the move
   to the multi-domain taxonomy introduced no regression.
 

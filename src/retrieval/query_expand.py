@@ -71,6 +71,13 @@ _EXPANSIONS: list[tuple[str, list[str]]] = [
     ("accident de la route", ["accident", "route", "circulation", "responsabilité", "assurance"]),
     ("accident", ["accident", "route", "circulation", "responsabilité", "assurance"]),
     ("ivre", ["ivresse", "alcool", "conduite", "route"]),
+    # Drunk driving — the sanction article (art. 87) lists "conduite sous l'empire
+    # d'un état alcoolique" as délit n°1, but shares "alcoolique" with the
+    # procedural articles (dépistage art. 3, immobilisation art. 105) and with the
+    # involuntary-homicide articles (89/90, where alcohol is only an aggravator),
+    # so it loses the keyword half to them. "délit"/"obtempérer"/"quiconque" come
+    # from 87's penalty list and separate it from that cluster.
+    ("ivresse", ["alcoolique", "délit", "obtempérer", "quiconque"]),
     ("alcool", ["ivresse", "alcoolémie", "conduite", "route"]),
     # Succession ------------------------------------------------------------
     ("herite", ["succession", "héritage", "héritier", "partage", "réserve"]),

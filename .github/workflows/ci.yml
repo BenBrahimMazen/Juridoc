@@ -30,7 +30,7 @@ jobs:
 
   # Heavy: needs the ~100 MB LFS index + the e5 embedding model (~1.1 GB).
   # Manual + weekly only, not per-push. Enforces thresholds just below the
-  # published scores (93.7 / 98.4 / 100 / 88.2 article-level) so regressions
+  # published scores (93.7 / 98.4 / 100 / 94.1 article-level) so regressions
   # fail loudly.
   eval:
     name: routing + retrieval eval
@@ -69,7 +69,7 @@ jobs:
           if art_rows:
               m["article"] = sum(r["article_ok"] for r in art_rows) / len(art_rows)
           print(f"n={n}  " + "  ".join(f"{k}={v:.3f}" for k, v in m.items()))
-          limits = {"top1": 0.90, "top2": 0.95, "retrieval": 0.99, "article": 0.78}
+          limits = {"top1": 0.90, "top2": 0.95, "retrieval": 0.99, "article": 0.84}
           failed = {k: (v, limits[k]) for k, v in m.items() if v < limits[k]}
           if failed:
               for k, (v, lim) in failed.items():
